@@ -39,4 +39,7 @@ if (url) {
   file = (f) => run('psql', [...base, '-f', f]);
   exec = (sql) => run('psql', [...base, '-c', sql]);
 }
-module.exports = { enabled, pool, file, exec, viaUrl: !!url };
+// Schemas and migrations are owned by the kiro-database repository (checked out next to this one, or set KIRO_DATABASE_DIR).
+const DB_DIR = E.KIRO_DATABASE_DIR || require('path').resolve(__dirname, '../../../kiro-database');
+const migration = (rel) => require('path').join(DB_DIR, 'migrations', rel);
+module.exports = { enabled, pool, file, exec, viaUrl: !!url, migration };

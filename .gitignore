@@ -1,0 +1,12 @@
+# Secrets and local settings: never commit (database addresses, keys, logins)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and generated files
+node_modules/
+dist/
+*.log
+.DS_Store

@@ -6,20 +6,18 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
 const crypto = require('crypto');
-const { enabled, pool, file, exec } = require('./pgpool');
+const { enabled, pool, file, exec, migration } = require('./pgpool');
 
 test('HTTP API on real Postgres', { skip: !enabled }, async (t) => {
   await exec('DROP TABLE IF EXISTS sale_line_lots, sale_lines, sales, stock_lots, items, users, businesses, phonepe_webhook_events, bills, merchant_payment_gateways CASCADE');
-  for (const f of ['001_phonepe.sql', '002_core.sql', '003_nightly.sql']) await file(path.join(__dirname, '../migrations', f));
+  for (const f of ['core/002_core.sql', 'core/003_nightly.sql']) await file(migration(f));
 
   const SECRET = crypto.randomBytes(32).toString('hex');
-  const makeStore = require('../src/store'); const makeCoreStore = require('../src/core-store');
-  const { createHandlers } = require('../src/handlers'); const { createCoreHandlers } = require('../src/core-handlers');
+  const makeCoreStore = require('../src/core-store');
+  const { createCoreHandlers } = require('../src/core-handlers');
   const { requireAuth, requireLiveUser } = require('../src/auth'); const { buildApp } = require('../src/app');
-  const { kek } = require('./helpers');
   const coreStore = makeCoreStore(pool);
   const app = buildApp({
-    handlers: createHandlers({ store: makeStore(pool), kek, cfg: { baseUrl: 'https://pp.test', qrPath: '/v3/qr/init', publicBaseUrl: 'https://api.test', qrExpirySeconds: 600, maxBillPaise: 10 ** 7 }, fetchImpl: async () => { throw new Error('no network in tests'); }, log: { error() {} } }),
     core: createCoreHandlers({ store: coreStore, jwtSecret: SECRET, log: { error() {} } }),
     authMiddleware: requireAuth(SECRET), liveUser: requireLiveUser(coreStore), corsOrigins: 'https://admin.kiro.test',
   });
@@ -92,7 +90,7 @@ test('HTTP API on real Postgres', { skip: !enabled }, async (t) => {
     const pos = (await api('POST', '/api/auth/login', { body: { login: 'ravi-a', password: 'Passw0rdTest1' } })).body.token;
     assert.equal((await api('POST', '/api/items', { token: pos, body: { name: 'X', pricePaise: 100, gstPct: 0 } })).status, 403);
     assert.equal((await api('POST', '/api/staff', { token: pos, body: { name: 'Y', login: 'y-a', role: 'owner', password: 'Passw0rdTest1' } })).status, 403);
-    assert.equal((await api('PUT', '/api/gateway', { token: pos, body: { merchantId: 'M', saltKey: 'saltsaltsalt', saltIndex: '1' } })).status, 403);
+    // PUT /api/gateway (payments) is served by kiro-payments, not by this API.
   });
   await t.test('SQL injection in search and lookup is harmless', async () => {
     for (const q of ["' OR 1=1 --", "'; DROP TABLE items; --", '%_%']) {

@@ -1,17 +1,17 @@
 {
-  "name": "kiro-payments-api",
-  "version": "0.1.0",
+  "name": "kiro-backend-api",
+  "version": "1.0.0",
   "private": true,
+  "description": "KIRO core API: auth, staff, items, stock, sales, reports, Ask KIRO, nightly owner report. Payments are in kiro-payments; database schema in kiro-database.",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test --test-concurrency=1 \"test/*.test.js\"",
-    "test:db": "node --env-file=../../qa/.env --test --test-concurrency=1 \"test/*.test.js\"",
+    "test:db": "node --env-file=.env.test --test --test-concurrency=1 \"test/*.test.js\"",
     "migrate": "node scripts/migrate.js",
     "migrate:local": "node --env-file=.env scripts/migrate.js",
-    "db:info": "node --env-file=.env scripts/db-info.js",
     "users": "node scripts/users.js"
   },
   "dependencies": {

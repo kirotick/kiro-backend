@@ -1,0 +1,7 @@
+# Code owners: their review is requested automatically on changes to these paths.
+* @kirotick
+/api/src/auth.js @kirotick
+/api/src/perms.js @kirotick
+/api/src/core-store.js @kirotick
+/api/scripts/ @kirotick
+/.github/ @kirotick

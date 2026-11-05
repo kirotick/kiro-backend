@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
-const { enabled, pool, file, exec } = require('./pgpool');
+const { enabled, pool, file, exec, migration } = require('./pgpool');
 const { res: mkRes } = require('./helpers');
 const makeStore = require('../src/core-store');
 const { createCoreHandlers } = require('../src/core-handlers');
@@ -15,8 +15,8 @@ const quiet = process.env.TEST_VERBOSE ? console : { error() {} };
 
 test('core API on real Postgres', { skip: !enabled }, async (t) => {
   await exec('DROP TABLE IF EXISTS sale_line_lots, sale_lines, sales, stock_lots, items, users, businesses, phonepe_webhook_events, bills, merchant_payment_gateways CASCADE');
-  for (const f of ['001_phonepe.sql', '002_core.sql', '003_nightly.sql']) await file(path.join(__dirname, '../migrations', f));
-  await file(path.join(__dirname, '../migrations/002_core.sql')); // re-run is harmless
+  for (const f of ['core/002_core.sql', 'core/003_nightly.sql']) await file(migration(f));
+  await file(migration('core/002_core.sql')); // re-run is harmless
   const store = makeStore(pool);
   let clock = Date.now();
   const H = createCoreHandlers({ store, jwtSecret: SECRET, now: () => new Date(clock), log: quiet });

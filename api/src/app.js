@@ -3,18 +3,13 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { corsMiddleware } = require('./cors');
 
-function buildApp({ handlers, core, authMiddleware, liveUser, corsOrigins = '' }) {
+// Payments (PhonePe QR, webhook, gateway) live in the separate kiro-payments service.
+function buildApp({ core, authMiddleware, liveUser, corsOrigins = '' }) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // behind one reverse proxy (Nginx/Cloudflare); adjust to your hosting
   app.use('/api', corsMiddleware(corsOrigins)); // only for the browser build of the admin app
   app.get('/health', (req, res) => res.json({ ok: true }));
-
-  // Public webhook: small body, rate limited, no auth (authenticity = X-Verify signature).
-  app.post('/phonepe-webhook',
-    rateLimit({ windowMs: 60_000, limit: 300, standardHeaders: true, legacyHeaders: false }),
-    express.json({ limit: '16kb' }),
-    handlers.webhook);
 
   const json = express.json({ limit: '64kb' });
   const lim = (windowMs, limit) => rateLimit({ windowMs, limit, standardHeaders: true, legacyHeaders: false });
@@ -46,11 +41,6 @@ function buildApp({ handlers, core, authMiddleware, liveUser, corsOrigins = '' }
   api.post('/ai/ask', lim(60_000, 20), core.aiAsk);   // per-IP burst limit; per-business hourly/daily caps live in ai.js
   api.get('/ai/status', core.aiStatus);
   api.get('/ai/insights', core.aiInsights);
-  // PhonePe dynamic QR (see README)
-  api.put('/gateway', handlers.saveGateway);
-  api.post('/bills', handlers.createBill);
-  api.post('/bills/:id/phonepe-qr', handlers.createQr);
-  api.get('/bills/:id/status', handlers.billStatus);
   app.use('/api', api);
 
   // eslint-disable-next-line no-unused-vars

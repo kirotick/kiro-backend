@@ -1,9 +1,7 @@
 'use strict';
 const { Pool } = require('pg');
 const { loadConfig } = require('./config');
-const makeStore = require('./store');
 const makeCoreStore = require('./core-store');
-const { createHandlers } = require('./handlers');
 const { createCoreHandlers } = require('./core-handlers');
 const { createAi } = require('./ai');
 const { createNightly } = require('./nightly');
@@ -15,9 +13,8 @@ const c = loadConfig();
 // (pgbouncer) Neon address when many cashiers bill at the same time; see qa/load results.
 const pool = new Pool({ connectionString: c.databaseUrl, max: Number(process.env.PG_POOL_MAX) || 10 });
 const coreStore = makeCoreStore(pool);
-const handlers = createHandlers({ store: makeStore(pool), kek: c.kek, cfg: c.cfg, fetchImpl: fetch });
 const core = createCoreHandlers({ store: coreStore, jwtSecret: c.jwtSecret, ai: createAi({ store: coreStore }) });
-buildApp({ handlers, core, authMiddleware: requireAuth(c.jwtSecret), liveUser: requireLiveUser(coreStore), corsOrigins: process.env.CORS_ORIGINS })
+buildApp({ core, authMiddleware: requireAuth(c.jwtSecret), liveUser: requireLiveUser(coreStore), corsOrigins: process.env.CORS_ORIGINS })
   .listen(c.port, () => console.log('KIRO API listening on', c.port));
 
 // Nightly 10 PM owner report: check every 5 minutes; the database makes sure each business gets it once per day.
