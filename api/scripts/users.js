@@ -31,7 +31,9 @@ function envFrom(file, key) {
 const db = opt('db') || 'dev';
 const URLS = {
   dev: () => process.env.DEV_DATABASE_URL || envFrom(path.join(__dirname, '../.env'), 'DEV_DATABASE_URL'),
-  qa: () => process.env.TEST_DATABASE_URL || envFrom(path.join(__dirname, '../../../qa/.env'), 'TEST_DATABASE_URL'),
+  // Test database address: api/.env.test, or kiro-qa-testing/.env next to this repository.
+  qa: () => process.env.TEST_DATABASE_URL || envFrom(path.join(__dirname, '../.env.test'), 'TEST_DATABASE_URL')
+    || envFrom(path.join(__dirname, '../../../kiro-qa-testing/.env'), 'TEST_DATABASE_URL'),
   production: () => process.env.DATABASE_URL || envFrom(path.join(__dirname, '../.env'), 'DATABASE_URL'),
 };
 if (!URLS[db]) die('--db must be dev, qa or production');
